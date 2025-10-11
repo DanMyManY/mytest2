@@ -282,6 +282,41 @@ Node* WordTree::insertRec(Node* node, const string& word) {
     return node;
 }
 
+int WordTree::getHeight(Node* node) {
+    return (node == nullptr) ? -1 : node->m_height;
+}
+
+int WordTree::getBalance(Node* node) {
+    if (node == nullptr) return 0;
+    return getHeight(node->m_left) - getHeight(node->m_right);
+}
+
+Node* WordTree::rotateRight(Node* y) {
+    Node* x = y->m_left;
+    Node* T2 = x->m_right;
+
+    x->m_right = y;
+    y->m_left = T2;
+
+    y->m_height = 1 + max(getHeight(y->m_left), getHeight(y->m_right));
+    x->m_height = 1 + max(getHeight(x->m_left), getHeight(x->m_right));
+
+    return x;
+}
+
+Node* WordTree::rotateLeft(Node* x) {
+    Node* y = x->m_right;
+    Node* T2 = y->m_left;
+
+    y->m_left = x;
+    x->m_right = T2;
+
+    x->m_height = 1 + max(getHeight(x->m_left), getHeight(x->m_right));
+    y->m_height = 1 + max(getHeight(y->m_left), getHeight(y->m_right));
+
+    return y;
+}
+
 
 ////////////////////////////////////////////////////////////
 BNode::BNode() {

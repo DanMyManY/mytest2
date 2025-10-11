@@ -66,6 +66,14 @@ private:
     void dump(Node* aNode, std::ostream& ostr);
     void destroyTree(Node* node);
     Node* insertRec(Node* node, const string& word);
+
+    Node* rotateLeft(Node* node);
+    Node* rotateRight(Node* node);
+
+    // Height and balance helpers
+    int getHeight(Node* node);
+    int getBalance(Node* node);
+    void updateHeight(Node* node);
 };
 
 class BNode {
