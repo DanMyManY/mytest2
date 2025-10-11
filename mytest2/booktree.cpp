@@ -24,28 +24,28 @@ bool BookTree::insert(string title, string author, string text) {
     // Splay the closest node to root
     m_root = splay(m_root, title);
 
-    // Duplicate title — don’t insert
+    // Duplicate title ï¿½ donï¿½t insert
     if (m_root->m_title == title)
         return false;
 
     BNode* newNode = new BNode(title, author, text);
 
     // Insert new node and reattach subtrees
-        if (title < m_root->m_title) {
-            newNode->m_right = m_root;
-            newNode->m_left = m_root->m_left;
-            m_root->m_left = nullptr;
-        }
-        else {
-            newNode->m_left = m_root;
-            newNode->m_right = m_root->m_right;
-            m_root->m_right = nullptr;
-        }
+    if (title < m_root->m_title) {
+        newNode->m_right = m_root;
+        newNode->m_left = m_root->m_left;
+        m_root->m_left = nullptr;
+    }
+    else {
+        newNode->m_left = m_root;
+        newNode->m_right = m_root->m_right;
+        m_root->m_right = nullptr;
+    }
 
     m_root = newNode;
     return true;
 }
-    
+
 
 int BookTree::findFrequency(string title, string word) {
     bool found = false;
@@ -188,6 +188,8 @@ void BookTree::destroyTree(BNode* node) {
 }
 
 ///////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////
 WordTree::~WordTree() {
     destroyTree(m_root);
 }
@@ -197,12 +199,13 @@ Node* WordTree::find(const string& word) {
 }
 
 bool WordTree::remove(const string& word) {
-    return 0;
+    bool flag = false;
+    m_root = removeRec(m_root, word, flag);
+    return flag;
 }
 
 void WordTree::insert(const string& word) {
-
-    return;
+    m_root = insertRec(m_root, word);
 }
 
 int WordTree::searchCount(string word) {
@@ -254,7 +257,7 @@ Node* WordTree::insertRec(Node* node, const string& word) {
         node->m_right = insertRec(node->m_right, word);
 
     // Update height
-    node->m_height = 1 + max(getHeight(node->m_left), getHeight(node->m_right));
+    updateHeight(node);
 
     // Balance factor
     int balance = getBalance(node);
@@ -282,8 +285,65 @@ Node* WordTree::insertRec(Node* node, const string& word) {
     return node;
 }
 
+Node* WordTree::removeRec(Node* node, const string& word, bool& success) {
+    if (node == nullptr)
+        return nullptr;
+
+    if (word < node->m_word)
+        node->m_left = removeRec(node->m_left, word, success);
+    else if (word > node->m_word)
+        node->m_right = removeRec(node->m_right, word, success);
+    else {
+        success = true;
+        if (node->m_count > 1) {
+            node->m_count--;
+            return node;
+        }
+        if (node->m_left == nullptr || node->m_right == nullptr) {
+            Node* temp = node->m_left ? node->m_left : node->m_right;
+            delete node;
+            return temp;
+        }
+        Node* temp = node->m_right;
+        while (temp->m_left != nullptr)
+            temp = temp->m_left;
+        node->m_word = temp->m_word;
+        node->m_count = temp->m_count;
+        temp->m_count = 1;
+        node->m_right = removeRec(node->m_right, node->m_word, success);
+    }
+
+    // Recalculate height and balance
+    node->m_height = 1 + max(getHeight(node->m_left), getHeight(node->m_right));
+    int balance = getBalance(node);
+
+    if (balance > 1 && getBalance(node->m_left) >= 0)
+        return rotateRight(node);
+    if (balance > 1 && getBalance(node->m_left) < 0) {
+        node->m_left = rotateLeft(node->m_left);
+        return rotateRight(node);
+    }
+    if (balance < -1 && getBalance(node->m_right) <= 0)
+        return rotateLeft(node);
+    if (balance < -1 && getBalance(node->m_right) > 0) {
+        node->m_right = rotateRight(node->m_right);
+        return rotateLeft(node);
+    }
+
+    return node;
+}
+
 int WordTree::getHeight(Node* node) {
     return (node == nullptr) ? -1 : node->m_height;
+}
+
+void WordTree::updateHeight(Node* node) {
+    if (node == nullptr) return;
+
+    int leftHeight = (node->m_left) ? node->m_left->m_height : -1;
+    int rightHeight = (node->m_right) ? node->m_right->m_height : -1;
+
+    node->m_height = 1 + max(leftHeight, rightHeight);
 }
 
 int WordTree::getBalance(Node* node) {
@@ -334,14 +394,14 @@ BNode::BNode(string title, string author, string text) {
 
     string word;
     for (size_t i = 0; i <= text.size(); i++) {
-        if(i == text.size() || text[i] == ' ') {
+        if (i == text.size() || text[i] == ' ') {
             if (!word.empty()) {
                 m_tree.insert(word);
                 word.clear();
             }
         }
-    else {
-        word += text[i];
+        else {
+            word += text[i];
         }
     }
 }
