@@ -15,8 +15,416 @@ Book database[9] = {
 };
 class Tester { // Tester class to implement test functions
 public:
+    bool testAVLBalancedRemoval() {
+        WordTree tree;
+        string words[] = { "mango","apple","banana","peach","cherry","orange","plum" };
+
+        // Insert all words
+        for (int i = 0; i < 7; i++) {
+            tree.insert(words[i]);
+        }
+
+        // Remove some words multiple times
+        tree.remove("apple");   // decrement count or remove node
+        tree.remove("apple");   // remove completely
+        tree.remove("banana");
+        tree.remove("plum");
+
+        // Check BST property
+        return isBST(tree.m_root, "", "");
+    }
+
+    bool testAVLInsertions() {
+        WordTree tree;
+        // Use the words from the Book database (split by space)
+        for (int i = 0; i < 9; i++) {
+            string text = database[i].m_text;
+            string word;
+            for (size_t j = 0; j <= text.size(); j++) {
+                if (j == text.size() || text[j] == ' ') {
+                    if (!word.empty()) {
+                        tree.insert(word);
+                        word.clear();
+                    }
+                }
+                else {
+                    word += text[j];
+                }
+            }
+        }
+        // Check if AVL balance property holds for all nodes
+        return isBalanced(tree.m_root);
+    }
+
+    // Test: BST property after inserting all words from the database
+    bool testAVLBSTInsertions() {
+        WordTree tree;
+
+        // Insert all words from every book into the AVL tree
+        for (int i = 0; i < 9; i++) {
+            string text = database[i].m_text;
+            string word;
+            for (size_t j = 0; j <= text.size(); j++) {
+                if (j == text.size() || text[j] == ' ') {
+                    if (!word.empty()) {
+                        tree.insert(word);
+                        word.clear();
+                    }
+                }
+                else {
+                    word += text[j];
+                }
+            }
+        }
+
+        // Check if BST property holds for all nodes
+        return isBST(tree.m_root, "", "");
+    }
+
+    bool testSplayInsertion() {
+        bool flag = true;
+
+        BookTree tree;
+
+        Book books[] = {
+            Book("Author1", "Gamma", "text one"),
+            Book("Author2", "Alpha", "text two"),
+            Book("Author3", "Omega", "text three"),
+            Book("Author4", "Beta", "text four")
+        };
+
+        int n = sizeof(database) / sizeof(database[0]);
+
+        for (int i = 0; i < n; ++i) {
+            tree.insert(database[i].m_title, database[i].m_author, database[i].m_text);
+
+            // 1️ Check splay behavior: last inserted node should be root
+            string rootTitle = tree.getRootKey();
+            if (rootTitle != database[i].m_title)
+                flag = false;
+
+            // 2️ Check BST property
+            if (!isBST_BNode(tree.m_root, "", ""))
+                flag = false;
+        }
+
+        return flag;
+    }
+
+    bool testBSTPreserved() {
+        bool flag = true;  // local flag to track test result
+
+        WordTree tree;
+        string words[] = { "mango","apple","banana","peach","cherry","orange","plum" };
+
+        // Insert all words
+        for (int i = 0; i < 7; i++) {
+            tree.insert(words[i]);
+        }
+
+        // Perform multiple removals
+        tree.remove("apple");
+        tree.remove("banana");
+        tree.remove("plum");
+        tree.remove("apple");  // removing again to test repeated deletion
+
+        // After removals, verify BST property
+        if (!isBST(tree.m_root, "", "")) {
+            flag = false;
+        }
+
+        return flag;
+    }
+
+    bool testAVLMultipleRemovals() {
+        bool flag = true;  // local flag to track if everything passes
+
+        WordTree tree;
+
+        string words[] = {
+            "apple","banana","cherry","date","elderberry","fig","grape","honeydew",
+            "kiwi","lemon","mango","nectarine","orange","papaya","quince","raspberry",
+            "strawberry","tangerine","ugli","vanilla","watermelon","xigua","yam","zucchini",
+            "apricot","blackberry","blueberry","cantaloupe","dragonfruit","guava",
+            "jackfruit","kumquat","lime","mulberry","olive","peach","pear","persimmon",
+            "pineapple","plum","pomegranate","starfruit","tomato","cranberry","currant",
+            "gooseberry","passionfruit","rhubarb","soursop","durian"
+        };
+
+        int n = sizeof(words) / sizeof(words[0]);
+
+        // Insert all words into the AVL tree
+        for (int i = 0; i < n; i++) {
+            tree.insert(words[i]);
+        }
+
+        // Remove 50 words (some may not exist after removal)
+        for (int i = 0; i < n; i++) {
+            tree.remove(words[i]);  // attempt to remove each word
+            // After each removal, ensure BST property still holds
+            if (!isBST(tree.m_root, "", "")) {
+                flag = false;
+            }
+        }
+
+        return flag;
+    }
+
+    bool testAVLFind() {
+        bool flag = true;  // start optimistic :)
+
+        WordTree tree;
+
+        // Words to insert
+        string words[] = {
+            "apple","banana","cherry","date","elderberry","fig","grape","honeydew",
+            "kiwi","lemon","mango","nectarine","orange","papaya","quince","raspberry",
+            "strawberry","tangerine","ugli","vanilla","watermelon","xigua","yam","zucchini",
+            "apricot","blackberry","blueberry","cantaloupe","dragonfruit","guava",
+            "jackfruit","kumquat","lime","mulberry","olive","peach","pear","persimmon",
+            "pineapple","plum","pomegranate","starfruit","tomato","cranberry","currant",
+            "gooseberry","passionfruit","rhubarb","soursop","durian"
+        };
+
+        int n = sizeof(words) / sizeof(words[0]);
+
+        // Insert all words
+        for (int i = 0; i < n; ++i) {
+            tree.insert(words[i]);
+        }
+
+        // Test: every inserted word should be found
+        for (int i = 0; i < n; ++i) {
+            Node* found = tree.find(words[i]);
+            if (!found || found->getValue() != words[i]) {
+                flag = false;
+            }
+        }
+
+        // Test: searching for words not in the tree should return nullptr
+        string missingWords[] = { "unicorn", "dragon", "phoenix", "narwhal", "griffin" };
+        int m = sizeof(missingWords) / sizeof(missingWords[0]);
+        for (int i = 0; i < m; ++i) {
+            Node* notFound = tree.find(missingWords[i]);
+            if (notFound != nullptr) {
+                flag = false;
+            }
+        }
+
+        // Optional: verify BST property after all finds (find shouldn't modify structure)
+        if (!isBST(tree.m_root, "", "")) {
+            flag = false;
+        }
+
+        return flag;
+    }
+
+    bool testBookTreeSearchCount() {
+        bool flag = true;  // internal flag
+
+        BookTree tree;
+
+        // Sample books
+        Book books[] = {
+            Book("Author1", "BookOne", "apple orange apple banana"),
+            Book("Author2", "BookTwo", "banana banana orange"),
+            Book("Author3", "BookThree", "cherry apple cherry apple")
+        };
+
+        int n = sizeof(books) / sizeof(books[0]);
+        tree.loadData(books, n);
+
+        // Words to test
+        struct TestCase {
+            string title;
+            string word;
+            int expectedCount;
+        };
+
+        TestCase tests[] = {
+            { "BookOne", "apple", 2 },
+            { "BookOne", "orange", 1 },
+            { "BookTwo", "banana", 2 },
+            { "BookTwo", "apple", 0 },
+            { "BookThree", "cherry", 2 },
+            { "BookThree", "apple", 2 },
+            { "BookThree", "banana", 0 }
+        };
+
+        int m = sizeof(tests) / sizeof(tests[0]);
+
+        for (int i = 0; i < m; ++i) {
+            int count = tree.searchCount(tests[i].title, tests[i].word);
+
+            // 1️⃣ Check frequency correctness
+            if (count != tests[i].expectedCount) {
+                flag = false;
+            }
+
+            // 2️⃣ Check that searched book is now at root (splay operation)
+            string rootTitle = tree.getRootKey();
+            if (rootTitle != tests[i].title) {
+                flag = false;
+            }
+        }
+
+        return flag;
+    }
+
+    bool testBookTreeFindFrequency() {
+        bool flag = true;
+
+        BookTree tree;
+
+        // Sample books
+        Book books[] = {
+            Book("Author1", "BookOne", "apple orange apple banana"),
+            Book("Author2", "BookTwo", "banana banana orange"),
+            Book("Author3", "BookThree", "cherry apple cherry apple")
+        };
+
+        int n = sizeof(books) / sizeof(books[0]);
+        tree.loadData(books, n);
+
+        // Test cases
+        struct TestCase {
+            string title;
+            string word;
+            int expectedCount;
+        };
+
+        TestCase tests[] = {
+            { "BookOne", "apple", 2 },
+            { "BookOne", "orange", 1 },
+            { "BookTwo", "banana", 2 },
+            { "BookTwo", "apple", 0 },
+            { "BookThree", "cherry", 2 },
+            { "BookThree", "apple", 2 },
+            { "BookThree", "banana", 0 }
+        };
+
+        int m = sizeof(tests) / sizeof(tests[0]);
+
+        for (int i = 0; i < m; ++i) {
+            int count = tree.findFrequency(tests[i].title, tests[i].word);
+
+            // 1️⃣ Check if frequency is correct
+            if (count != tests[i].expectedCount) {
+                flag = false;
+            }
+
+            // 2️⃣ Check if the searched book is now at root (splay)
+            if (tree.getRootKey() != tests[i].title) {
+                flag = false;
+            }
+        }
+
+        return flag;
+    }
+
+    bool testSplayBSTProperty() {
+        bool flag = true;
+
+        BookTree tree;
+
+        // Sample books
+        Book books[] = {
+            Book("Author1", "BookOne", "apple orange apple banana"),
+            Book("Author2", "BookTwo", "banana banana orange"),
+            Book("Author3", "BookThree", "cherry apple cherry apple"),
+            Book("Author4", "BookFour", "plum peach apple cherry"),
+            Book("Author5", "BookFive", "orange banana plum apple")
+        };
+
+        int n = sizeof(books) / sizeof(books[0]);
+        tree.loadData(books, n);
+
+        // Perform multiple splay operations by searching different books
+        string searchOrder[] = { "BookThree", "BookOne", "BookFive", "BookTwo", "BookFour" };
+        int m = sizeof(searchOrder) / sizeof(searchOrder[0]);
+
+        for (int i = 0; i < m; ++i) {
+            // Trigger splay by accessing the node
+            tree.findFrequency(searchOrder[i], "apple");
+
+            // Check BST property after every splay
+            if (!isBST_BNode(tree.m_root, "", "")) {
+                flag = false;
+            }
+        }
+
+        return flag;
+    }
+
+
+private:
+    bool isBST(Node* node, const string& minVal, const string& maxVal) {
+        if (!node) return true;
+        if ((!minVal.empty() && node->getValue() <= minVal) ||
+            (!maxVal.empty() && node->getValue() >= maxVal))
+            return false;
+        return isBST(node->m_left, minVal, node->getValue()) &&
+            isBST(node->m_right, node->getValue(), maxVal);
+    }
+
+    bool isBST_BNode(BNode* node, const string& minTitle, const string& maxTitle) {
+        if (!node) return true;
+
+        const string& title = node->m_title;
+
+        if ((!minTitle.empty() && title <= minTitle) ||
+            (!maxTitle.empty() && title >= maxTitle))
+            return false;
+
+        return isBST_BNode(node->m_left, minTitle, title) &&
+            isBST_BNode(node->m_right, title, maxTitle);
+    }
+
+    bool isBalanced(Node* node) {
+        if (!node) return true;
+
+        int leftHeight = node->m_left ? node->m_left->getHeight() : -1;
+        int rightHeight = node->m_right ? node->m_right->getHeight() : -1;
+
+        int balanceFactor = leftHeight - rightHeight;
+
+        // AVL condition: balance factor must be -1, 0, or 1
+        if (balanceFactor < -1 || balanceFactor > 1)
+            return false;
+
+        // Height correctness check: node height = 1 + max(left, right)
+        int expectedHeight = 1 + (leftHeight > rightHeight ? leftHeight : rightHeight);
+        if (node->getHeight() != expectedHeight)
+            return false;
+
+        // Recursively check left and right subtrees
+        return isBalanced(node->m_left) && isBalanced(node->m_right);
+    }
+
+
+
 };
+
 int main() {
+
+    Tester tester;
+    cout << (tester.testAVLBalancedRemoval() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testAVLInsertions() ? "PASSED" : "FAILED" ) << endl;
+    cout << (tester.testAVLBSTInsertions() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testSplayInsertion() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testBSTPreserved() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testAVLMultipleRemovals() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testAVLFind() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testBookTreeSearchCount() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testBookTreeFindFrequency() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testSplayBSTProperty() ? "PASSED" : "FAILED") << endl;
+    cout << (tester.testSplayBSTProperty() ? "PASSED" : "FAILED") << endl;
+
+    
+    
+
+
+
     cout << "Creating a sample Splay tree: " << endl << endl;
     BookTree aTree;
     aTree.loadData(database, 9);
@@ -26,7 +434,7 @@ int main() {
     cout << "Frequency of tinsmith in The Wonderful Wizard of Oz: " << endl;
     cout << "\t" << aTree.findFrequency("The Wonderful Wizard of Oz", "tinsmith") << endl << endl;
 
-    /*cout << "Creating a sample AVL tree: " << endl << endl;
+    cout << "Creating a sample AVL tree: " << endl << endl;
     WordTree bTree;
     string words[] = { "apple","orange","cherry","plum","tomato","banana","apple" };
     for (int i = 0; i < 6; i++)
@@ -36,7 +444,7 @@ int main() {
     cout << endl << endl;
     cout << "Frequency of apple: " << endl;
     Node* appleNode = bTree.find("apple");
-    cout << "\t" << appleNode->getFrequency() << endl << endl;*/
+    cout << "\t" << appleNode->getFrequency() << endl << endl;
 
     return 0;
 }
