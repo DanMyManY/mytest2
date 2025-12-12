@@ -59,11 +59,18 @@ int BookTree::findFrequency(string title, string word) {
 }
 
 int BookTree::searchCount(string title, string word) {
-    return 0;
+    bool found = false;
+    m_root = access(m_root, title, found);
+    if (!found) return 0;
+
+    return m_root->m_tree.searchCount(word);
 }
 
 int BookTree::getTextTreeHeight(string title) {
-    return 0;
+    bool found = false;
+    m_root = access(m_root, title, found);
+    if (!found) return -1;
+    return m_root->m_tree.getTreeHeight();
 }
 
 string BookTree::getRootKey() {
@@ -195,6 +202,15 @@ WordTree::~WordTree() {
 }
 
 Node* WordTree::find(const string& word) {
+    Node* curr = m_root;
+    while (curr != nullptr) {
+        if (word == curr->m_word)
+            return curr;
+        else if (word < curr->m_word)
+            curr = curr->m_left;
+        else
+            curr = curr->m_right;
+    }
     return nullptr;
 }
 
@@ -209,8 +225,18 @@ void WordTree::insert(const string& word) {
 }
 
 int WordTree::searchCount(string word) {
-    return 0;
+    Node* curr = m_root;
+    while (curr != nullptr) {
+        if (word == curr->m_word)
+            return curr->m_count;   
+        else if (word < curr->m_word)
+            curr = curr->m_left;
+        else
+            curr = curr->m_right;
+    }
+    return 0;  
 }
+
 
 int WordTree::getTreeHeight() {
     // implementation is provided
@@ -244,17 +270,21 @@ void WordTree::destroyTree(Node* node) {
 }
 
 Node* WordTree::insertRec(Node* node, const string& word) {
-    if (node == nullptr)
-        return new Node(word);
-
-    if (word == node->m_word) {
-        node->m_count++;
-        return node;
+    if (node == nullptr) {
+        Node* n = new Node(word);
+        n->m_count = 1;
+        return n;
     }
-    else if (word < node->m_word)
-        node->m_left = insertRec(node->m_left, word);
-    else
-        node->m_right = insertRec(node->m_right, word);
+    else {
+        if (word == node->m_word) {
+            node->m_count++;
+            return node;
+        }
+        else if (word < node->m_word)
+            node->m_left = insertRec(node->m_left, word);
+        else
+            node->m_right = insertRec(node->m_right, word);
+    }
 
     // Update height
     updateHeight(node);
@@ -262,6 +292,7 @@ Node* WordTree::insertRec(Node* node, const string& word) {
     // Balance factor
     int balance = getBalance(node);
 
+    
     // Left Heavy
     if (balance > 1 && word < node->m_left->m_word)
         return rotateRight(node);
@@ -412,13 +443,13 @@ BNode::~BNode() {
 }
 
 int BNode::findFrequency(string word) {
-    return 0;
+    return m_tree.find(word)->getFrequency();
 }
 
 int BNode::searchCount(string word) {
-    return 0;
+    return m_tree.searchCount(word);
 }
 
 int BNode::getTextTreeHeight() {
-    return 0;
+    return m_tree.getTreeHeight();
 }
